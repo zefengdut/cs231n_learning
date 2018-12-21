@@ -75,8 +75,8 @@ class TwoLayerNet(object):
     # Store the result in the scores variable, which should be an array of      #
     # shape (N, C).                                                             #
     #############################################################################
-    layer1_out = np.dot(X,W1)+b1
-    layer1_out *= (layer1_out>0)   #relu
+    layer1 = np.dot(X,W1)+b1
+    layer1_out = (layer1>0) * layer1  #relu
     scores = np.dot(layer1_out,W2)+b2
     #############################################################################
     #                              END OF YOUR CODE                             #
@@ -94,9 +94,10 @@ class TwoLayerNet(object):
     # in the variable loss, which should be a scalar. Use the Softmax           #
     # classifier loss.                                                          #
     #############################################################################
+    scores -= np.max(scores,axis=1,keepdims=True)
     res_exp = np.exp(scores)
-    loss = np.sum(-np.log(res_exp[range(res_exp.shape[0]),list(y)]/np.sum(res_exp,axis=1)))
-    loss /= res_exp.shape[0]
+    loss = np.sum(-np.log(res_exp[np.arange(N),list(y)]/np.sum(res_exp,axis=1)))
+    loss /= N
     loss += reg*(np.sum(W1*W1)+np.sum(W2*W2))
     #############################################################################
     #                              END OF YOUR CODE                             #
@@ -115,8 +116,8 @@ class TwoLayerNet(object):
     dW2 = np.dot(layer1_out.T,dTemp)
    # drelu = layer1_out
   #  drelu(drelu>0) = 1
-    db1 = np.sum(np.dot(dTemp,W2.T)*(layer1_out>0),axis=0)
-    dW1 = np.dot(X.T,np.dot(dTemp,W2.T)*(layer1_out>0))
+    db1 = np.sum(np.dot(dTemp,W2.T)*(layer1>0),axis=0)
+    dW1 = np.dot(X.T,np.dot(dTemp,W2.T)*(layer1>0))
     grads['W1'] = dW1/N + 2*reg*W1
     grads['b1'] = db1/N
     grads['W2'] = dW2/N + 2*reg*W2

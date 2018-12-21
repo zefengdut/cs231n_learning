@@ -31,7 +31,9 @@ def softmax_loss_naive(W, X, y, reg):
   # regularization!                                                           #
   #############################################################################
   for i in range(num_train):
-    fun_class_res = np.exp(np.dot(X[i],W))
+    fun_class_res = np.dot(X[i],W)
+    fun_class_res -= max(fun_class_res)
+    fun_class_res = np.exp(fun_class_res)
     current_score = fun_class_res[y[i]]
     #temp_loss = 0
     for j in range(num_class):
@@ -71,7 +73,9 @@ def softmax_loss_vectorized(W, X, y, reg):
   # regularization!                                                           #
   #############################################################################
   res_dot = np.dot(X,W)
+  res_dot -= np.max(res_dot,axis=1,keepdims=True)
   res_dot_exp = np.exp(res_dot)
+  
   loss = np.sum(-np.log((res_dot_exp[range(num_train),list(y)].reshape(-1,1)/np.sum(res_dot_exp,axis = 1).reshape(-1,1))))
   loss /= num_train
   loss += reg*np.sum(W*W)
