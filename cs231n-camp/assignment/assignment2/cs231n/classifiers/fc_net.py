@@ -47,7 +47,14 @@ class TwoLayerNet(object):
         # and biases using the keys 'W1' and 'b1' and second layer                 #
         # weights and biases using the keys 'W2' and 'b2'.                         #
         ############################################################################
-        pass
+        self.params['W1'] = np.random.normal(0,weight_scale,(input_dim,hidden_dim))
+        #self.params['b1'] = np.zeros_like(hidden_dim)
+        self.params['b1'] = np.zeros(shape=(hidden_dim))
+        self.params['W2'] = np.random.normal(0,weight_scale,(hidden_dim,num_classes))
+        #self.params['b2'] = np.zeros_like(np.array([num_classes]))
+        self.params['b2'] = np.zeros(shape=(num_classes))
+        #print((self.params['b1']).shape)
+        #print((self.params['b2']).shape)
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -77,7 +84,11 @@ class TwoLayerNet(object):
         # TODO: Implement the forward pass for the two-layer net, computing the    #
         # class scores for X and storing them in the scores variable.              #
         ############################################################################
-        pass
+        #x_temp = X.reshape(X.shape[0],-1)
+        outlayel1,cache_layel1 = affine_relu_forward(X,self.params['W1'],self.params['b1'])
+        outlayel2,cache_layel2 = affine_forward(outlayel1,self.params['W2'],self.params['b2'])
+        scores = outlayel2
+        #scores, dout2 = softmax_loss(outlayel2,y)
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -97,7 +108,14 @@ class TwoLayerNet(object):
         # automated tests, make sure that your L2 regularization includes a factor #
         # of 0.5 to simplify the expression for the gradient.                      #
         ############################################################################
-        pass
+        loss, dout2 = softmax_loss(scores,y)
+        loss += 0.5*self.reg*(np.sum(self.params['W1'] ** 2) + np.sum(self.params['W2'] ** 2))
+        dx2,dW2,db2 = affine_backward(dout2,cache_layel2)
+        grads['b2'] = db2
+        grads['W2'] = dW2 + self.reg*self.params['W2']
+        dx1,dW1,db1 = affine_relu_backward(dx2,cache_layel1)
+        grads['b1'] = db1
+        grads['W1'] = dW1 + self.reg*self.params['W1']
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
