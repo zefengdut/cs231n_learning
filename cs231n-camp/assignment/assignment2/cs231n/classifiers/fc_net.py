@@ -252,6 +252,7 @@ class FullyConnectedNet(object):
         ############################################################################
         out_temp = X
         cache_layel = []
+        cache_dropout = []
         for lay in range(self.num_layers - 1):
             if self.normalization=='batchnorm':
                 out_temp,cache_layel_temp = affine_bn_relu_forward\
@@ -260,6 +261,9 @@ class FullyConnectedNet(object):
                  , self.params['gamma'+str(lay+1)]\
                  , self.params['beta'+str(lay+1)]\
                  , self.bn_params[lay])
+                if self.use_dropout:
+                    out_temp, do_cache = dropout_forward(out_temp, self.dropout_param)
+                    cache_dropout.append(do_cache)
                 cache_layel.append(cache_layel_temp)
             elif self.normalization=='layernorm':
                 out_temp,cache_layel_temp = affine_ln_relu_forward\
@@ -268,17 +272,22 @@ class FullyConnectedNet(object):
                  , self.params['gamma'+str(lay+1)]\
                  , self.params['beta'+str(lay+1)]\
                  , self.bn_params[lay])
+                if self.use_dropout:
+                    out_temp, do_cache = dropout_forward(out_temp, self.dropout_param)
+                    cache_dropout.append(do_cache)
                 cache_layel.append(cache_layel_temp)
                 
             else:
                 out_temp,cache_layel_temp = affine_relu_forward(out_temp,self.params['W'+ str(lay+1)],self.params['b'+ str(lay+1)])
+                if self.use_dropout:
+                    out_temp, do_cache = dropout_forward(out_temp, self.dropout_param)
+                    cache_dropout.append(do_cache)
                 cache_layel.append(cache_layel_temp)
         scores,cache_layel_temp = affine_forward(out_temp,self.params['W'+ str(self.num_layers)],self.params['b'+ str(self.num_layers)])
         cache_layel.append(cache_layel_temp)
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
-
         # If test mode return early
         if mode == 'test':
             return scores
@@ -305,12 +314,18 @@ class FullyConnectedNet(object):
         for lay in range(self.num_layers - 1,0,-1):
             loss += 0.5*self.reg*(np.sum(self.params['W'+ str(lay)] ** 2))
             if self.normalization=='batchnorm':
+                if self.use_dropout:
+                    dx_out = dropout_backward(dx_out, cache_dropout[lay-1])
                 dx_out,dW_out,db_out,dgamma,dbeta = \
                 affine_bn_relu_backward(dx_out,cache_layel[lay-1])
             elif self.normalization=='layernorm':
+                if self.use_dropout:
+                    dx_out = dropout_backward(dx_out, cache_dropout[lay-1])
                 dx_out,dW_out,db_out,dgamma,dbeta = \
                 affine_ln_relu_backward(dx_out,cache_layel[lay-1])                   
             else:
+                if self.use_dropout:
+                    dx_out = dropout_backward(dx_out, cache_dropout[lay-1])
                 dx_out,dW_out,db_out = affine_relu_backward(dx_out,cache_layel[lay-1])
             grads['b'+ str(lay)] = db_out
             grads['W'+ str(lay)] = dW_out + self.reg*self.params['W'+ str(lay)]
